@@ -440,7 +440,7 @@ class GoogleMap extends Component {
       mapDom.removeEventListener('mousedown', this._onMapMouseDownNative, true);
     }
     window.removeEventListener('resize', this._onWindowResize);
-    window.removeEventListener('keydown', this._onKeyDownCapture);
+    window.removeEventListener('keydown', this._onKeyDownCapture, true);
     window.removeEventListener('mouseup', this._onChildMouseUp, false);
     if (this.props.resetBoundsOnResize) {
       removeResizeListener(mapDom, this._mapDomResizeCallback);

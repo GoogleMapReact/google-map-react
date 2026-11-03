@@ -1,6 +1,7 @@
-import React, { Component } from 'react';
+import React, { Component, act } from 'react';
 import PropTypes from 'prop-types';
 import TestUtils from 'react-dom/test-utils';
+import { createRoot } from 'react-dom/client';
 
 import expect from 'expect';
 
@@ -252,5 +253,44 @@ describe('Components', () => {
     expect(marker.parentNode.className).toNotExist();
     expect(marker.parentNode.style.left).toEqual('0.250129066669615px');
     expect(marker.parentNode.style.top).toEqual('-12.62811732746195px');
+  });
+
+  it('Should remove the window keydown listener on unmount', () => {
+    global.IS_REACT_ACT_ENVIRONMENT = true;
+    const isCapture = (options) =>
+      typeof options === 'object' ? Boolean(options.capture) : Boolean(options);
+    const keydownCalls = (spy) =>
+      spy.calls
+        .map((call) => call.arguments)
+        .filter(([type]) => type === 'keydown');
+    const addSpy = expect.spyOn(window, 'addEventListener').andCallThrough();
+    const removeSpy = expect
+      .spyOn(window, 'removeEventListener')
+      .andCallThrough();
+    const root = createRoot(document.createElement('div'));
+
+    act(() => {
+      root.render(
+        <GoogleMap
+          defaultCenter={{ lat: 59.938043, lng: 30.337157 }}
+          defaultZoom={9}
+          googleMapLoader={() => new Promise(() => {})}
+        />
+      );
+    });
+    act(() => {
+      root.unmount();
+    });
+    addSpy.restore();
+    removeSpy.restore();
+
+    // removeEventListener only removes a listener whose capture flag matches.
+    const [[, listener, addOptions]] = keydownCalls(addSpy);
+    const matchingRemovals = keydownCalls(removeSpy).filter(
+      ([, removed, removeOptions]) =>
+        removed === listener &&
+        isCapture(removeOptions) === isCapture(addOptions)
+    );
+    expect(matchingRemovals.length).toEqual(1);
   });
 });
